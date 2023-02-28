@@ -42,7 +42,7 @@ authorsRouter.put("/:authorId", (req, res) => {
   const AuthorsArray = JSON.parse(fs.readFileSync(authorsJSONPath))
   const index = AuthorsArray.findIndex(author => author.id === req.params.authorId)
   const oldAuthor = AuthorsArray[index]
-  const updatedAuthor = { ...oldAuthor, ...req.body, updatedAt: new Date() }
+  const updatedAuthor = { ...oldAuthor, ...req.body}
   AuthorsArray[index] = updatedAuthor
   fs.writeFileSync(authorsJSONPath, JSON.stringify(AuthorsArray))
   res.send(updatedAuthor)
