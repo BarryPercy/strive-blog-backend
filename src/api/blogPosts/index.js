@@ -3,50 +3,85 @@ import fs from "fs" // CORE MODULE (no need to install it!!!!)
 import { fileURLToPath } from "url" // CORE MODULE
 import { dirname, join } from "path" // CORE MODULE
 import uniqid from "uniqid"
+import { checkBlogPostsSchema, checkCommentsSchema, triggerBadRequest } from "./validation.js"
+import {getBlogPosts, writeBlogPosts} from "../../lib/fs-tools.js"
 
 const blogPostsRouter = Express.Router()
 
 
-const blogPostsJSONPath = join(dirname(fileURLToPath(import.meta.url)), "blogPosts.json")
-console.log("TARGET:", join(dirname(fileURLToPath(import.meta.url)), "blogPosts.json"))
-const getBlogPosts = () => JSON.parse(fs.readFileSync(blogPostsJSONPath))
-const writeBlogPosts = blogPostsArray => fs.writeFileSync(blogPostsJSONPath, JSON.stringify(blogPostsArray))
+blogPostsRouter.post("/", checkBlogPostsSchema, triggerBadRequest, async (req, res, next) => {
+  const newBlogPost = { ...req.body, id: uniqid(), createdAt: new Date(), updatedAt: new Date() }
+  const blogPostsArray = await getBlogPosts();
+  blogPostsArray.push(newBlogPost)
+  await writeBlogPosts(blogPostsArray);
+  res.status(201).send({ id: newBlogPost.id })
+})
 
-blogPostsRouter.get("/", (req, res) => {
-  const blogPostsArray = getBlogPosts();
+blogPostsRouter.get("/", async (req, res, next) => {
+  try{
+    const blogPostsArray = await getBlogPosts();
   res.send(blogPostsArray)
-})
-
-blogPostsRouter.get("/:authorId", (req, res) => {
-  const blogPostsArray = getBlogPosts();
-  const author = blogPostsArray.find(author => author.id === req.params.authorId)
-  res.send(author)
-})
-
-blogPostsRouter.post("/", (req, res) => {
-      const newBlogPost = { ...req.body, id: uniqid(), createdAt: new Date(), updatedAt: new Date() }
-      const blogPostsArray = getBlogPosts();
-      blogPostsArray.push(newBlogPost)
-      writeBlogPosts(blogPostsArray);
-      res.status(201).send({ id: newBlogPost.id })
-  })
+  } catch(error){
+    next(error)
+  }
   
-
-blogPostsRouter.put("/:authorId", (req, res) => {
-  const blogPostsArray = getBlogPosts();
-  const index = blogPostsArray.findIndex(author => author.id === req.params.authorId)
-  const oldBlogPost = blogPostsArray[index]
-  const updatedBlogPost = { ...oldBlogPost, ...req.body}
-  blogPostsArray[index] = updatedBlogPost
-  writeBlogPosts(blogPostsArray);
-  res.send(updatedBlogPost)
 })
 
-blogPostsRouter.delete("/:authorId", (req, res) => {
-  const blogPostsArray = getBlogPosts();
-  const remainingBlogPosts = blogPostsArray.filter(author => author.id !== req.params.authorId) // ! = =
-  writeBlogPosts(remainingBlogPosts)
-  res.status(204).send()
+blogPostsRouter.get("/:blogPostId", triggerBadRequest, async (req, res, next) => {
+  try{
+    const blogPostsArray = await getBlogPosts();
+    const blogPost = blogPostsArray.find(blogPost => blogPost.id === req.params.blogPostId)
+    if(blogPost){
+      res.send(blogPost)
+    }else{
+      next(createHttpError(404, `Blog Post with id ${req.params.blogPostId} not found!`))
+    }
+  } catch(error){
+    next(error)
+  }
+  
+  
+})
+  
+blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
+  try{
+    const blogPostsArray = await getBlogPosts();
+    const index = blogPostsArray.findIndex(blogPost => blogPost.id === req.params.blogPostId)
+    if(index!==-1){
+      const oldBlogPost = blogPostsArray[index]
+      const updatedBlogPost = { ...oldBlogPost, ...req.body, updatedAt: new Date()}
+      blogPostsArray[index] = updatedBlogPost
+      await writeBlogPosts(blogPostsArray);
+      res.send(updatedBlogPost)
+    }else{
+      next(createHttpError(404, `Blog Post with id ${req.params.blogPostId} not found!`))
+    }
+  }catch(error){
+    next(error)
+  }
+})
+
+blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
+  try{
+    const blogPostsArray = await getBlogPosts();
+    const remainingBlogPosts = blogPostsArray.filter(blogPost => blogPost.id !== req.params.blogPostId)
+    if(blogPostsArray.length!==remainingBlogPosts.length){
+      await writeBlogPosts(remainingBlogPosts)
+      res.status(204).send()
+    } else {
+      next(createHttpError(404, `Blog Post with id ${req.params.blogPostId} not found!`))
+    }
+  }catch(error){
+    next(error)
+  }
+})
+
+blogPostsRouter.post("/", checkCommentsSchema, triggerBadRequest, async (req, res, next) => {
+  const newComment = { ...req.body, id: uniqid()}
+  const commentArray = await getBlogPosts();
+  blogPostsArray.push(newBlogPost)
+  await writeBlogPosts(blogPostsArray);
+  res.status(201).send({ id: newBlogPost.id })
 })
 
 export default blogPostsRouter

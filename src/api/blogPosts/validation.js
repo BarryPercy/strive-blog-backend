@@ -14,39 +14,50 @@ const blogPostsSchema = {
       errorMessage: "Category is a mandatory field and needs to be a string!",
     },
   },
-  cover: {
+  "readTime.value": {
     in: ["body"],
     isString: {
-      errorMessage: "cover is a mandatory field and needs to be a string!",
+      errorMessage: "Read Time Value is a mandatory field and needs to be a string!",
     },
   },
-  author: {
+  "readTime.unit": {
     in: ["body"],
     isString: {
-      errorMessage: "author is a mandatory field and needs to be a string!",
+      errorMessage: "Read Time Unit is a mandatory field and needs to be a string!",
     },
   },
   content: {
     in: ["body"],
     isString: {
-      errorMessage: "content is a mandatory field and needs to be a string!",
+      errorMessage: "Content is a mandatory field and needs to be a string!",
     },
   },
 }
 
-export const checkblogPostsSchema = checkSchema(blogPostsSchema) // this function creates a middleware
+const commentsSchema = {
+  author: {
+    in: ["body"],
+    isString: {
+      errorMessage: "Title is a mandatory field and needs to be a string!",
+    },
+  },
+  content: {
+    in: ["body"],
+    isString: {
+      errorMessage: "Category is a mandatory field and needs to be a string!",
+    },
+  },
+}
+
+export const checkBlogPostsSchema = checkSchema(blogPostsSchema)
+export const checkCommentsSchema = checkSchema(commentsSchema)
 
 export const triggerBadRequest = (req, res, next) => {
-  // 1. Check if checkBooksSchema has found any error in req.body
   const errors = validationResult(req)
-
   console.log(errors.array())
-
   if (errors.isEmpty()) {
-    // 2.1 If we don't have errors --> normal flow (next)
     next()
   } else {
-    // 2.2 If we have any error --> trigger 400
     next(createHttpError(400, "Errors during blog post validation", { errorsList: errors.array() }))
   }
 }

@@ -1,69 +1,78 @@
 import Express from "express" // 3RD PARTY MODULE (npm i express)
 import fs from "fs" // CORE MODULE (no need to install it!!!!)
-import { fileURLToPath } from "url" // CORE MODULE
-import { dirname, join } from "path" // CORE MODULE
 import uniqid from "uniqid"
+import { getAuthors, writeAuthors } from "../../lib/fs-tools.js"
+import { checkAuthorsSchema, triggerBadRequest } from "./validation.js"
 
 const authorsRouter = Express.Router()
 
 
-const authorsJSONPath = join(dirname(fileURLToPath(import.meta.url)), "authors.json")
-console.log("TARGET:", join(dirname(fileURLToPath(import.meta.url)), "authors.json"))
-
-
-authorsRouter.get("/", (req, res) => {
-  const fileContentAsBuffer = fs.readFileSync(authorsJSONPath)
-  const AuthorsArray = JSON.parse(fileContentAsBuffer)
-  res.send(AuthorsArray)
+authorsRouter.post("/", checkAuthorsSchema, triggerBadRequest, async (req, res, next) => {
+    const newAuthor = { ...req.body, id: uniqid() }
+    const AuthorsArray = await getAuthors();
+    AuthorsArray.push(newAuthor)
+    await writeAuthors(AuthorsArray)
+    res.status(201).send({ id: newAuthor.id })
 })
 
-authorsRouter.get("/:authorId", (req, res) => {
-  const AuthorsArray = JSON.parse(fs.readFileSync(authorsJSONPath))
-  const author = AuthorsArray.find(author => author.id === req.params.authorId)
-  res.send(author)
+authorsRouter.get("/", async (req, res, next) => {
+  try{
+    const authorsArray = await getAuthors();
+    res.send(authorsArray)
+  }catch(error){
+    next(error)
+  }
 })
 
-authorsRouter.post("/", (req, res) => {
-    const requiredFields = ["name", "surname", "email", "dateOfBirth", "avatar"];
-    const missingFields = requiredFields.filter(field => !req.body[field]);
-    if (missingFields.length > 0) {
-        res.status(400).send({ message: `Missing required fields: ${missingFields.join(", ")}` });
-      }else{
-        const newAuthor = { ...req.body, id: uniqid() }
-        const AuthorsArray = JSON.parse(fs.readFileSync(authorsJSONPath))
-        AuthorsArray.push(newAuthor)
-        fs.writeFileSync(authorsJSONPath, JSON.stringify(AuthorsArray))
-        res.status(201).send({ id: newAuthor.id })
-      }
-  })
-  
-
-authorsRouter.put("/:authorId", (req, res) => {
-  const AuthorsArray = JSON.parse(fs.readFileSync(authorsJSONPath))
-  const index = AuthorsArray.findIndex(author => author.id === req.params.authorId)
-  const oldAuthor = AuthorsArray[index]
-  const updatedAuthor = { ...oldAuthor, ...req.body}
-  AuthorsArray[index] = updatedAuthor
-  fs.writeFileSync(authorsJSONPath, JSON.stringify(AuthorsArray))
-  res.send(updatedAuthor)
-})
-
-authorsRouter.delete("/:authorId", (req, res) => {
-  const AuthorsArray = JSON.parse(fs.readFileSync(authorsJSONPath))
-  const remainingAuthors = AuthorsArray.filter(author => author.id !== req.params.authorId) // ! = =
-  fs.writeFileSync(authorsJSONPath, JSON.stringify(remainingAuthors))
-  res.status(204).send()
-})
-
-authorsRouter.post("/checkemail", (req, res) => {
-    const AuthorsArray = JSON.parse(fs.readFileSync(authorsJSONPath))
-    const authorWithEmail = AuthorsArray.find(author => author.email === req.body.email)
-  
-    if (authorWithEmail) {
-      res.send({ emailExists: true, id: authorWithEmail.id })
-    } else {
-      res.send({ emailExists: false })
+authorsRouter.get("/:authorId", async (req, res, next) => {
+  try{
+    const AuthorsArray = await getAuthors();
+    const author = AuthorsArray.find(author => author.id === req.params.authorId)
+    if(author){
+      res.send(author)
+    }else{
+      next(createHttpError(404, `Author with id ${req.params.authorId} not found!`))
     }
-  })
+  }catch(error){
+    next(error)
+  }
+})
+
+  
+
+authorsRouter.put("/:authorId", async (req, res, next) => {
+  try{
+    const authorsArray = await getAuthors();
+    console.log(authorsArray);
+    const index = authorsArray.findIndex(author => author.id === req.params.authorId)
+    if(index!==-1){
+      const oldAuthor = authorsArray[index]
+      const updatedAuthor = { ...oldAuthor, ...req.body}
+      authorsArray[index] = updatedAuthor
+      await writeAuthors(authorsArray)
+      res.send(updatedAuthor)
+    }else{
+      next(createHttpError(404, `Author with id ${req.params.authorId} not found!`))
+    }
+  }catch(error){
+    next(error)
+  }
+})
+
+authorsRouter.delete("/:authorId", async (req, res, next) => {
+  try{
+    const authorsArray = await getAuthors();
+    const remainingAuthors = authorsArray.filter(author => author.id !== req.params.authorId)
+    if(authorsArray.length!==remainingAuthors.length){
+      await writeAuthors(remainingAuthors)
+      res.status(204).send()
+    }else{
+      next(createHttpError(404, `Author with id ${req.params.authorId} not found!`))
+    }
+  }catch(error){
+    next(error)
+  }
+  
+})
 
 export default authorsRouter
