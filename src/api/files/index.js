@@ -1,11 +1,22 @@
 import Express from "express"
 import multer from "multer"
 import { extname } from "path"
+import { CloudinaryStorage } from "multer-storage-cloudinary"
 import { saveAuthorsAvatars } from "../../lib/fs-tools.js"
 
 const filesRouter = Express.Router()
 
-filesRouter.post("authors/:authorId/single", multer().single("avatar"), async (req, res, next) => {
+const cloudinaryUploader = multer({
+  storage: new CloudinaryStorage({
+    cloudinary, // cloudinary is going to search for smth in .env vars called process.env.CLOUDINARY_URL
+    params: {
+      folder: "blogPosts",
+    },
+  }),
+}).single("avatar")
+
+
+filesRouter.post("authors/:authorId/single", cloudinaryUploader, async (req, res, next) => {
     try {
       console.log("FILE:", req.file)
       console.log("BODY:", req.body)
@@ -18,7 +29,7 @@ filesRouter.post("authors/:authorId/single", multer().single("avatar"), async (r
     }
   })
 
-filesRouter.post("blogPosts/:blogPostId/single", multer().single("avatar"), async (req, res, next) => {
+filesRouter.post("blogPosts/:blogPostId/single", cloudinaryUploader, async (req, res, next) => {
     try {
         console.log("FILE:", req.file)
         console.log("BODY:", req.body)

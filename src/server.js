@@ -15,14 +15,13 @@ const publicFolderPath = join(process.cwd(), "./public")
 server.use(Express.static(publicFolderPath))
 
 const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
+console.log(process.env.FE_PROD_URL)
 server.use(
   cors({
     origin: (currentOrigin, corsNext) => {
       if (!currentOrigin || whitelist.indexOf(currentOrigin) !== -1) {
-        // origin is in the whitelist
         corsNext(null, true)
       } else {
-        // origin is not in the whitelist
         corsNext(createHttpError(400, `Origin ${currentOrigin} is not in the whitelist!`))
       }
     },
