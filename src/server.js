@@ -17,7 +17,7 @@ server.use(Express.static(publicFolderPath))
 const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
 
 const corsOptions = {
-  origin: "https://strive-blog-frontend-1.vercel.app/"
+  origin: "https://strive-blog-frontend-1.vercel.app"
 }
 server.use(
   cors(corsOptions)
