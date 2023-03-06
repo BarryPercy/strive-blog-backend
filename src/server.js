@@ -6,14 +6,28 @@ import filesRouter from "./api/files/index.js"
 import cors from 'cors'
 import { genericErrorHandler, badRequestHandler, unauthorizedHandler, notfoundHandler } from "./errorsHandlers.js"
 import { join} from "path"
+import createHttpError from "http-errors"
 
 const server = Express()
-const port = 3001
+const port = process.env.PORT || 3001
 const publicFolderPath = join(process.cwd(), "./public")
 
 server.use(Express.static(publicFolderPath))
-server.use(cors())
-server.use(Express.json())
+
+const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
+server.use(
+  cors({
+    origin: (currentOrigin, corsNext) => {
+      if (!currentOrigin || whitelist.indexOf(currentOrigin) !== -1) {
+        // origin is in the whitelist
+        corsNext(null, true)
+      } else {
+        // origin is not in the whitelist
+        corsNext(createHttpError(400, `Origin ${currentOrigin} is not in the whitelist!`))
+      }
+    },
+  })
+)
 
 server.use("/authors", authorsRouter)
 server.use("/blogPosts", blogPostsRouter)
