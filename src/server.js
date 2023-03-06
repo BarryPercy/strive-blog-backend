@@ -22,6 +22,7 @@ const corsOptions = {
 server.use(
   cors(corsOptions)
 )
+server.use(Express.json())
 
 server.use("/authors", authorsRouter)
 server.use("/blogPosts", blogPostsRouter)
