@@ -15,17 +15,12 @@ const publicFolderPath = join(process.cwd(), "./public")
 server.use(Express.static(publicFolderPath))
 
 const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
-console.log(process.env.FE_PROD_URL)
+
+const corsOptions = {
+  origin: "https://strive-blog-frontend-1.vercel.app/"
+}
 server.use(
-  cors({
-    origin: (currentOrigin, corsNext) => {
-      if (!currentOrigin || whitelist.indexOf(currentOrigin) !== -1) {
-        corsNext(null, true)
-      } else {
-        corsNext(createHttpError(400, `Origin ${currentOrigin} is not in the whitelist!`))
-      }
-    },
-  })
+  cors(corsOptions)
 )
 
 server.use("/authors", authorsRouter)
