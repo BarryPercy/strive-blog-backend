@@ -3,12 +3,13 @@ import multer from "multer"
 import { extname } from "path"
 import { CloudinaryStorage } from "multer-storage-cloudinary"
 import { saveAuthorsAvatars } from "../../lib/fs-tools.js"
+import { v2 as cloudinary } from "cloudinary"
 
 const filesRouter = Express.Router()
 
 const cloudinaryUploader = multer({
   storage: new CloudinaryStorage({
-    cloudinary: cloudinary, // cloudinary is going to search for smth in .env vars called process.env.CLOUDINARY_URL
+    cloudinary: cloudinary, 
     params: {
       folder: "blogPosts",
     },
