@@ -9,19 +9,35 @@ import { join} from "path"
 import createHttpError from "http-errors"
 
 const server = Express()
-const port = process.env.PORT || 3001
+const port = process.env.PORT
 const publicFolderPath = join(process.cwd(), "./public")
 
 server.use(Express.static(publicFolderPath))
 
-const whitelist = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
+const whiteList = [process.env.FE_DEV_URL, process.env.FE_PROD_URL]
+
+// const corsOptions = {
+//   origin: "https://strive-blog-frontend-1.vercel.app"
+// }
 
 const corsOptions = {
-  origin: "https://strive-blog-frontend-1.vercel.app"
+  origin: (origin,corsNext) => {
+    if(!origin || whiteList.indexOf(origin)!==-1){
+      corsNext(null,true)
+    }else{
+      corsNext(
+        corsNext(createHttpError(400, `Origin ${origin} is not in the whitelist!`))
+      )
+    }
+  }
 }
 server.use(
   cors(corsOptions)
 )
+
+// server.use(cors({
+//   origin: {currentOrigin}
+// }))
 server.use(Express.json())
 
 server.use("/authors", authorsRouter)
@@ -31,7 +47,7 @@ server.use("/", filesRouter)
 server.use(badRequestHandler) // 400
 server.use(unauthorizedHandler) // 401
 server.use(notfoundHandler) // 404
-server.use(genericErrorHandler) // 500 (this should ALWAYS be the last one)
+server.use(genericErrorHandler) // 500
 
 server.listen(port, () => {
   console.table(listEndpoints(server))

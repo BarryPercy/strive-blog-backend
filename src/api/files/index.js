@@ -14,7 +14,7 @@ const cloudinaryUploader = multer({
       folder: "blogPosts",
     },
   }),
-}).single("avatar")
+}).single("cover")
 
 
 // filesRouter.post("authors/:authorId/single", cloudinaryUploader, async (req, res, next) => 
@@ -34,9 +34,21 @@ const cloudinaryUploader = multer({
 
 filesRouter.post("blogPosts/:blogPostId/single", cloudinaryUploader, async (req, res, next) => {
     try {
-        const originalFileExtension = extname(req.file.originalname)
-        const fileName = req.params.blogPostId + originalFileExtension
-        await saveBlogPostAvatars(fileName, req.file.buffer)
+         const originalFileExtension = extname(req.file.originalname)
+         const fileName = req.params.blogPostId + originalFileExtension
+         //await saveBlogPostAvatars(fileName, req.file.buffer)
+         const blogPostsArray = await getBlogPosts();
+         const index = blogPostsArray.findIndex(blogPost => blogPost.id === req.params.blogPostId)
+         if(index!==-1){
+           const oldBlogPost = blogPostsArray[index]
+           const updatedBlogPost = { ...oldBlogPost, ...req.body, cover: req.file.path, updatedAt: new Date()}
+           console.log(req.file.path)
+           blogPostsArray[index] = updatedBlogPost
+           await writeBlogPosts(blogPostsArray);
+           res.send(updatedBlogPost)
+         }else{
+           next(createHttpError(404, `Blog Post with id ${req.params.blogPostId} not found!`))
+         }
         res.send({ message: "file uploaded" })
     } catch (error) {
         next(error)

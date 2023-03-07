@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon -e js ./src/server.js",
+    "dev": "nodemon -r dotenv/config -e js ./src/server.js",
     "start": "node ./src/server.js"
   },
   "dependencies": {
@@ -25,6 +25,7 @@
   "author": "Barry Percy",
   "license": "ISC",
   "devDependencies": {
+    "dotenv": "^16.0.3",
     "nodemon": "^2.0.20"
   }
 }
