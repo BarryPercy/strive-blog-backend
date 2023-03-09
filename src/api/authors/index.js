@@ -1,6 +1,7 @@
 import Express from "express" // 3RD PARTY MODULE (npm i express)
 import fs from "fs" // CORE MODULE (no need to install it!!!!)
 import uniqid from "uniqid"
+import { sendRegistrationEmail } from "../../lib/email-tools.js"
 import { getAuthors, writeAuthors } from "../../lib/fs-tools.js"
 import { checkAuthorsSchema, triggerBadRequest } from "./validation.js"
 
@@ -73,6 +74,17 @@ authorsRouter.delete("/:authorId", async (req, res, next) => {
     next(error)
   }
   
+})
+
+authorsRouter.post("/register", async (req, res, next) => {
+  try {
+    const email = req.body
+    console.log(email)
+    await sendRegistrationEmail(email)
+    res.send()
+  } catch (error) {
+    next(error)
+  }
 })
 
 export default authorsRouter

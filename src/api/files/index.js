@@ -2,10 +2,11 @@ import Express from "express"
 import multer from "multer"
 import { extname } from "path"
 import { CloudinaryStorage } from "multer-storage-cloudinary"
-import { getBlogPosts, saveAuthorsAvatars, writeBlogPosts } from "../../lib/fs-tools.js"
+import { getBlogPosts, saveAuthorsAvatars, writeBlogPosts, getBlogPostsJSONReadableStream  } from "../../lib/fs-tools.js"
 import { v2 as cloudinary } from "cloudinary"
 import { getPDFReadableStream } from "../../lib/pdf-tools.js"
 import { pipeline } from "stream"
+import { Transform } from "@json2csv/node"
 const filesRouter = Express.Router()
 
 const cloudinaryUploader = multer({
@@ -74,6 +75,20 @@ filesRouter.get("/:blogPostId/pdf", async (req, res, next) => {
     }else{
       next(createHttpError(404, `Blog Post with id ${req.params.blogPostId} not found!`))
     }
+  } catch (error) {
+    next(error)
+  }
+})
+
+filesRouter.get("/csv", (req, res, next) => {
+  try {
+    res.setHeader("Content-Disposition", "attachment; filename=blogPosts.csv")
+    const source = getBlogPostsJSONReadableStream()
+    const transform = new Transform({ fields: ["id", "title", "category"] })
+    const destination = res
+    pipeline(source, transform, destination, err => {
+      if (err) console.log(err)
+    })
   } catch (error) {
     next(error)
   }
