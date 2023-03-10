@@ -80,11 +80,30 @@ filesRouter.get("/:blogPostId/pdf", async (req, res, next) => {
   }
 })
 
+filesRouter.get("/:blogPostId/pdf/attachment", async (req, res, next) => {
+  try {
+    res.setHeader("Content-Disposition", "attachment; filename=example.pdf") // Without this header the browser will try to open (not save) the file.
+    // This header will tell the browser to open the "save file as" dialog
+    // SOURCE (READABLE STREAM pdfmake) --> DESTINATION (WRITABLE STREAM http response)
+    const blogPosts = await getBlogPosts();
+    const blogPostIndex = blogPosts.findIndex(blogPost => blogPost.id === req.params.blogPostId)
+    if(blogPostIndex!==-1){
+      res.setHeader("Content-Disposition", "attachment; filename=example.pdf")
+      console.log(blogPosts[blogPostIndex]);
+      const source = await getPDFReadableStream(blogPosts[blogPostIndex])  
+      res.send(source)
+    }else{
+      next(createHttpError(404, `Blog Post with id ${req.params.blogPostId} not found!`))
+    }
+  } catch (error) {
+    next(error)
+  }
+})
 filesRouter.get("/csv", (req, res, next) => {
   try {
     res.setHeader("Content-Disposition", "attachment; filename=blogPosts.csv")
     const source = getBlogPostsJSONReadableStream()
-    const transform = new Transform({ fields: ["id", "title", "category"] })
+    const transform = new Transform({ fields: ["id", "title", "category", "content"] })
     const destination = res
     pipeline(source, transform, destination, err => {
       if (err) console.log(err)

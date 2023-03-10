@@ -9,7 +9,7 @@ export const sendRegistrationEmail = async (email) => {
     from: process.env.SENDER_EMAIL_ADDRESS,
     subject: email.subject,
     text: email.text,
-    html: "<strong>bla bla bla but in bold</strong>",
+    html: email.html,
   }
   sgMail
   .send(msg)
