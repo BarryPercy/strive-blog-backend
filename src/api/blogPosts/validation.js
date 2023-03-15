@@ -44,7 +44,7 @@ const commentsSchema = {
   content: {
     in: ["body"],
     isString: {
-      errorMessage: "Category is a mandatory field and needs to be a string!",
+      errorMessage: "Content is a mandatory field and needs to be a string!",
     },
   },
 }

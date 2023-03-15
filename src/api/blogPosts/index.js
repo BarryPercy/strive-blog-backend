@@ -1,12 +1,12 @@
-import Express from "express" // 3RD PARTY MODULE (npm i express)
-import { checkBlogPostsSchema, checkCommentsSchema, triggerBadRequest } from "./validation.js"
+import Express from "express"
 import BlogPostModel from "./model.js"
 import createHttpError from "http-errors"
+import q2m from "query-to-mongo"
 
 const blogPostsRouter = Express.Router()
 
 
-blogPostsRouter.post("/", checkBlogPostsSchema, triggerBadRequest, async (req, res, next) => {
+blogPostsRouter.post("/", async (req, res, next) => {
     try{
         const newBlogPost = new BlogPostModel(req.body)
         const { _id } = await newBlogPost.save()
@@ -18,11 +18,23 @@ blogPostsRouter.post("/", checkBlogPostsSchema, triggerBadRequest, async (req, r
 
 blogPostsRouter.get("/", async (req, res, next) => {
   try {
-    const blogPosts = await BlogPostModel.find()
-    res.send(blogPosts)
-  } catch (error) {
-    next(error)
-  }
+      const mongoQuery = q2m(req.query)
+      const blogPosts = await BlogPostModel.find(mongoQuery.criteria, mongoQuery.options.fields)
+        .limit(mongoQuery.options.limit)
+        .skip(mongoQuery.options.skip)
+        .sort(mongoQuery.options.sort)
+      const total = await BlogPostModel.countDocuments(mongoQuery.criteria) - (mongoQuery.options.skip ? mongoQuery.options.skip:0)
+      const currentUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+      const limit = mongoQuery.options.limit? mongoQuery.options.limit:total
+      res.send({
+        links: mongoQuery.links(currentUrl+"blogPosts", total),
+        total,
+        numberOfPages: Math.ceil(total / limit),
+        blogPosts,
+      })
+    } catch (error) {
+      next(error)
+    }
 })
 
 blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
@@ -67,6 +79,7 @@ blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
     next(error)
   }
 })
+
 
 
 export default blogPostsRouter
