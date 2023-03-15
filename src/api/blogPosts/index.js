@@ -23,11 +23,11 @@ blogPostsRouter.get("/", async (req, res, next) => {
         .limit(mongoQuery.options.limit)
         .skip(mongoQuery.options.skip)
         .sort(mongoQuery.options.sort)
-      const total = await BlogPostModel.countDocuments(mongoQuery.criteria) - (mongoQuery.options.skip ? mongoQuery.options.skip:0)
-      const currentUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+      const total = await BlogPostModel.countDocuments(mongoQuery.criteria)
+      const currentUrl = `${req.protocol}://${req.get("host")}`;
       const limit = mongoQuery.options.limit? mongoQuery.options.limit:total
       res.send({
-        links: mongoQuery.links(currentUrl+"blogPosts", total),
+        links: mongoQuery.links(currentUrl+"/blogPosts", total),
         total,
         numberOfPages: Math.ceil(total / limit),
         blogPosts,
