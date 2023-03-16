@@ -1,33 +1,33 @@
 import Express from "express" // 3RD PARTY MODULE (npm i express)
 import { sendRegistrationEmail } from "../../lib/email-tools.js"
 import createError from "http-errors"
-import AuthorsModel from "./model.js"
+import UsersModel from "./model.js"
 
-const authorsRouter = Express.Router()
+const usersRouter = Express.Router()
 
 
-authorsRouter.post("/", async (req, res, next) => {
+usersRouter.post("/", async (req, res, next) => {
   try {
-    const newAuthor = new AuthorsModel(req.body)
-    const { _id } = await newAuthor.save()
+    const newUser = new UsersModel(req.body)
+    const { _id } = await newUser.save()
     res.status(201).send({ _id })
   } catch (error) {
     next(error)
   }
 })
 
-authorsRouter.get("/", async (req, res, next) => {
+usersRouter.get("/", async (req, res, next) => {
   try {
-    const authors = await AuthorsModel.find()
+    const authors = await UsersModel.find()
     res.send(authors)
   } catch (error) {
     next(error)
   }
 })
 
-authorsRouter.get("/:authorId", async (req, res, next) => {
+usersRouter.get("/:authorId", async (req, res, next) => {
   try {
-    const author = await AuthorsModel.findById(req.params.authorId)
+    const author = await UsersModel.findById(req.params.authorId)
     if (author) {
       res.send(author)
     } else {
@@ -40,9 +40,9 @@ authorsRouter.get("/:authorId", async (req, res, next) => {
 
   
 
-authorsRouter.put("/:authorId", async (req, res, next) => {
+usersRouter.put("/:authorId", async (req, res, next) => {
   try {
-    const updatedAuthor = await AuthorsModel.findByIdAndUpdate(req.params.authorId, req.body, { new: true, runValidators: true })
+    const updatedAuthor = await UsersModel.findByIdAndUpdate(req.params.authorId, req.body, { new: true, runValidators: true })
     if (updatedAuthor) {
       res.send(updatedAuthor)
     } else {
@@ -53,9 +53,9 @@ authorsRouter.put("/:authorId", async (req, res, next) => {
   }
 })
 
-authorsRouter.delete("/:authorId", async (req, res, next) => {
+usersRouter.delete("/:authorId", async (req, res, next) => {
   try {
-    const deletedAuthor = await AuthorsModel.findByIdAndDelete(req.params.authorId)
+    const deletedAuthor = await UsersModel.findByIdAndUpdate(req.params.authorId)
     if (deletedAuthor) {
       res.status(204).send()
     } else {
@@ -66,7 +66,7 @@ authorsRouter.delete("/:authorId", async (req, res, next) => {
   }
 })
 
-authorsRouter.post("/register", async (req, res, next) => {
+usersRouter.post("/register", async (req, res, next) => {
   try {
     const email = req.body
     console.log(email)
@@ -77,4 +77,4 @@ authorsRouter.post("/register", async (req, res, next) => {
   }
 })
 
-export default authorsRouter
+export default usersRouter

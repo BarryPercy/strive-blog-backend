@@ -1,5 +1,6 @@
 import Express from "express"
 import BlogPostModel from "./model.js"
+import AuthorModel from "../authors/model.js"
 import createHttpError from "http-errors"
 import q2m from "query-to-mongo"
 
@@ -19,13 +20,8 @@ blogPostsRouter.post("/", async (req, res, next) => {
 blogPostsRouter.get("/", async (req, res, next) => {
   try {
       const mongoQuery = q2m(req.query)
-      const blogPosts = await BlogPostModel.find(mongoQuery.criteria, mongoQuery.options.fields)
-        .limit(mongoQuery.options.limit)
-        .skip(mongoQuery.options.skip)
-        .sort(mongoQuery.options.sort)
-      const total = await BlogPostModel.countDocuments(mongoQuery.criteria)
+      const {blogPosts, total, limit} = await BlogPostModel.findBlogPostsWithAuthors(mongoQuery)
       const currentUrl = `${req.protocol}://${req.get("host")}`;
-      const limit = mongoQuery.options.limit? mongoQuery.options.limit:total
       res.send({
         links: mongoQuery.links(currentUrl+"/blogPosts", total),
         total,
@@ -77,6 +73,41 @@ blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
     }
   } catch (error) {
     next(error)
+  }
+})
+
+//like
+
+blogPostsRouter.post("/:blogPostId/like", async (req, res, next) => {
+  try{
+      const { userId } = req.body
+      if(!userId) return next(createHttpError(404, `No userId found in request`))
+      const user = await AuthorModel.findById(userId)
+      if (!user) return next(createHttpError(404, `User with id ${userId} not found!`))
+      const blogPost = await BlogPostModel.findById(req.params.blogPostId)
+      if(!blogPost) return next(createHttpError(404, `BlogPost with id ${req.params.blogPostId} does not exist`))
+      let liked = await BlogPostModel.findOne({ _id:req.params.blogPostId,likes: userId })
+      if(liked){
+        console.log("already liked")
+        const currentBlogPost = await BlogPostModel.findOneAndUpdate(
+          { _id:req.params.blogPostId, likes: userId },
+          { $pull: {likes: userId } },
+          { new: true, runValidators: true }
+        )
+        liked = false;
+        res.send({LikesArray:currentBlogPost.likes, Length:currentBlogPost.likes.length, isLiked:liked})
+      } else {
+        console.log("liked")
+        liked=true;
+        const currentBlogPost = await BlogPostModel.findOneAndUpdate(
+          { _id:req.params.blogPostId },
+          { $push: {likes: userId } },
+          { new: true, runValidators: true, upsert: true }
+        )
+        res.send({LikesArray:currentBlogPost.likes, Length:currentBlogPost.likes.length, isLiked:liked})
+      }
+  }catch(error){
+      next(error)
   }
 })
 
