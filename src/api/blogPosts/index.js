@@ -88,7 +88,6 @@ blogPostsRouter.post("/:blogPostId/like", async (req, res, next) => {
       if(!blogPost) return next(createHttpError(404, `BlogPost with id ${req.params.blogPostId} does not exist`))
       let liked = await BlogPostModel.findOne({ _id:req.params.blogPostId,likes: userId })
       if(liked){
-        console.log("already liked")
         const currentBlogPost = await BlogPostModel.findOneAndUpdate(
           { _id:req.params.blogPostId, likes: userId },
           { $pull: {likes: userId } },
@@ -97,7 +96,6 @@ blogPostsRouter.post("/:blogPostId/like", async (req, res, next) => {
         liked = false;
         res.send({LikesArray:currentBlogPost.likes, Length:currentBlogPost.likes.length, isLiked:liked})
       } else {
-        console.log("liked")
         liked=true;
         const currentBlogPost = await BlogPostModel.findOneAndUpdate(
           { _id:req.params.blogPostId },
