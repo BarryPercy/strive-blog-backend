@@ -28,7 +28,9 @@
     "request": "^2.88.2",
     "swagger-ui-express": "^4.6.2",
     "uniqid": "^5.4.0",
-    "yamljs": "^0.3.0"
+    "yamljs": "^0.3.0",
+    "atob": "^2.1.2",
+    "bcrypt": "^5.1.0"
   },
   "keywords": [],
   "author": "Barry Percy",

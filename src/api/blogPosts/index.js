@@ -3,13 +3,18 @@ import BlogPostModel from "./model.js"
 import AuthorModel from "../authors/model.js"
 import createHttpError from "http-errors"
 import q2m from "query-to-mongo"
+import { basicAuthMiddleware } from "../../lib/auth/basic.js"
 
 const blogPostsRouter = Express.Router()
 
 
-blogPostsRouter.post("/", async (req, res, next) => {
+blogPostsRouter.post("/",basicAuthMiddleware, async (req, res, next) => {
     try{
-        const newBlogPost = new BlogPostModel(req.body)
+        const authorIds = [req.user._id]
+        if(req.body.authors){
+          authorIds.push(...req.body.authors)
+        }
+        const newBlogPost = new BlogPostModel({...req.body, authors:authorIds})
         const { _id } = await newBlogPost.save()
         res.status(201).send({ _id })
     }catch(error){
@@ -46,8 +51,15 @@ blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   }
 })
   
-blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
+blogPostsRouter.put("/:blogPostId",basicAuthMiddleware, async (req, res, next) => {
   try {
+    const isUserAnAuthorOrAdmin= await BlogPostModel.isUserAnAuthor(req.user,req.params.blogPostId);
+    if(req.user.role === "Admin"){
+      isUserAnAuthorOrAdmin = true;
+    }
+    if(!isUserAnAuthorOrAdmin){
+      next(createHttpError(401,`User with id ${req.params.blogPostId} did not write this blogPost`))
+    }
     const updatedBlogPost = await BlogPostModel.findByIdAndUpdate(
       req.params.blogPostId,
       req.body,
@@ -63,8 +75,15 @@ blogPostsRouter.put("/:blogPostId", async (req, res, next) => {
   }
 })
 
-blogPostsRouter.delete("/:blogPostId", async (req, res, next) => {
+blogPostsRouter.delete("/:blogPostId",basicAuthMiddleware, async (req, res, next) => {
   try {
+    const isUserAnAuthorOrAdmin= await BlogPostModel.isUserAnAuthor(req.user,req.params.blogPostId);
+    if(req.user.role === "Admin"){
+      isUserAnAuthorOrAdmin = true;
+    }
+    if(!isUserAnAuthorOrAdmin){
+      next(createHttpError(401,`User with id ${req.params.blogPostId} did not write this blogPost`))
+    }
     const deletedBlogPost = await BlogPostModel.findByIdAndDelete(req.params.blogPostId)
     if(deletedBlogPost){
       res.status(204).send()

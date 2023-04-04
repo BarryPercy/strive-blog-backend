@@ -47,4 +47,14 @@ blogPostSchema.static("findBlogPostsWithAuthors", async function(query) {
       return {blogPosts, total, limit}
 })
 
+blogPostSchema.static("isUserAnAuthor", async function(user, blogId){
+  const blogPost = await this.findById(blogId);
+  for (const authorId of blogPost.authors) {
+    if (authorId.equals(user._id)) {
+      return true;
+    }
+  }
+  return false;
+})
+
 export default model("BlogPost", blogPostSchema)
