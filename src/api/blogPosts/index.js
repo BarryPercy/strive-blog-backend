@@ -4,11 +4,11 @@ import AuthorModel from "../authors/model.js"
 import createHttpError from "http-errors"
 import q2m from "query-to-mongo"
 import { basicAuthMiddleware } from "../../lib/auth/basic.js"
-
+import { JWTAuthMiddleware } from "../../lib/auth/jwt.js"
 const blogPostsRouter = Express.Router()
 
 
-blogPostsRouter.post("/",basicAuthMiddleware, async (req, res, next) => {
+blogPostsRouter.post("/",JWTAuthMiddleware, async (req, res, next) => {
     try{
         const authorIds = [req.user._id]
         if(req.body.authors){
@@ -51,7 +51,7 @@ blogPostsRouter.get("/:blogPostId", async (req, res, next) => {
   }
 })
   
-blogPostsRouter.put("/:blogPostId",basicAuthMiddleware, async (req, res, next) => {
+blogPostsRouter.put("/:blogPostId",JWTAuthMiddleware, async (req, res, next) => {
   try {
     const isUserAnAuthorOrAdmin= await BlogPostModel.isUserAnAuthor(req.user,req.params.blogPostId);
     if(req.user.role === "Admin"){
@@ -75,7 +75,7 @@ blogPostsRouter.put("/:blogPostId",basicAuthMiddleware, async (req, res, next) =
   }
 })
 
-blogPostsRouter.delete("/:blogPostId",basicAuthMiddleware, async (req, res, next) => {
+blogPostsRouter.delete("/:blogPostId",JWTAuthMiddleware, async (req, res, next) => {
   try {
     const isUserAnAuthorOrAdmin= await BlogPostModel.isUserAnAuthor(req.user,req.params.blogPostId);
     if(req.user.role === "Admin"){

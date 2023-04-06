@@ -32,7 +32,7 @@ authorsRouter.get("/",JWTAuthMiddleware, adminOnlyMiddleware, async (req, res, n
 
 authorsRouter.get("/me/stories", JWTAuthMiddleware, async (req, res, next) => {
   try {
-    const blogPosts = await BlogPostsModel.find()
+    const blogPosts = await BlogPostsModel.find().populate({ path: "authors", select: "firstName lastName"})
     const sendArray = [];
     for(const blogPost of blogPosts){
       for(const authorId of blogPost.authors){
@@ -132,6 +132,7 @@ authorsRouter.post("/login", async (req, res, next) => {
     if (user) {
       const payload = { _id: user._id, role: user.role }
       const accessToken = await createAccessToken(payload)
+      console.log(accessToken)
       res.send({ accessToken })
     } else {
       next(createError(401, "Credentials are not ok!"))
